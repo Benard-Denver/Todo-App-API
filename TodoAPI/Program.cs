@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Text;
+using TodoAPI.DbModels;
 using TodoAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,8 +50,11 @@ builder.Services.AddAuthentication(options =>
             )
         };
     });
+builder.Services.AddDbContext<TodoContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddHostedService<NotificationService>();
 
 var app = builder.Build();
 

@@ -10,14 +10,14 @@ using TodoAPI.Services;
 
 namespace TodoAPI.Controllers
 {
-    
+
     [ApiController]
     [Route("[controller]")]
     public class UsersController : ControllerBase
     {
         private TodoContext dB = new TodoContext();
         private readonly JwtService _jwtService;
-        public UsersController(JwtService jwtService) 
+        public UsersController(JwtService jwtService)
         {
             _jwtService = jwtService;
         }
@@ -49,7 +49,7 @@ namespace TodoAPI.Controllers
             dB.Users.Add(user);
             dB.SaveChanges();
 
-            return Ok(new { username = user.Username, token});
+            return Ok(new { username = user.Username, token });
         }
 
         [HttpPost("login")]

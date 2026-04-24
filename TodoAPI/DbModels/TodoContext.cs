@@ -15,12 +15,13 @@ public partial class TodoContext : DbContext
     {
     }
 
+    public virtual DbSet<Notification> Notifications { get; set; }
+
     public virtual DbSet<Todo> Todos { get; set; }
 
     public virtual DbSet<TodoStatus> TodoStatuses { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-    public virtual DbSet<Notification> Notifications { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -28,13 +29,30 @@ public partial class TodoContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E32583B5D11");
+
+            entity.ToTable("Notification");
+
+            entity.Property(e => e.NotificationId).HasColumnName("NotificationID");
+            entity.Property(e => e.IsRead).HasColumnName("isRead");
+            entity.Property(e => e.Message).HasMaxLength(500);
+            entity.Property(e => e.TodoId).HasColumnName("TodoID");
+
+            entity.HasOne(d => d.Todo).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.TodoId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Todo_Notification");
+        });
+
         modelBuilder.Entity<Todo>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Todo__3214EC0798790169");
 
             entity.ToTable("Todo");
 
-            entity.Property(e => e.Description).HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.DueDate).HasColumnType("datetime");
             entity.Property(e => e.StatusId).HasColumnName("StatusID");
             entity.Property(e => e.Title).HasMaxLength(30);
@@ -70,16 +88,12 @@ public partial class TodoContext : DbContext
             entity.ToTable("User");
 
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.Email).HasMaxLength(30);
             entity.Property(e => e.Password)
-                .HasMaxLength(20)
-                .HasDefaultValue("12345");
+                .HasMaxLength(100)
+                .IsUnicode(false);
             entity.Property(e => e.Username).HasMaxLength(20);
         });
-
-        modelBuilder.Entity<Notification>()
-       .HasOne(n => n.Todo)
-       .WithMany()
-       .HasForeignKey(n => n.TodoID);
 
         OnModelCreatingPartial(modelBuilder);
     }

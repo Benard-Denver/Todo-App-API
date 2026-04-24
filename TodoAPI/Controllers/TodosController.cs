@@ -54,14 +54,14 @@ namespace TodoAPI.Controllers
         public ActionResult Create(TodoModel newTodo/*, [FromQuery]string username*/)
         {
             var username = User.Identity?.Name;
-            
+
             if (newTodo == null)
             {
                 return BadRequest();
             }
             var status = dB.TodoStatuses.FirstOrDefault(s => s.StatusOption == newTodo.Status);
             var user = dB.Users.FirstOrDefault(u => u.Username == username);
-            
+
             if (status == null)
             {
                 return BadRequest("Invalid Status");
@@ -76,7 +76,7 @@ namespace TodoAPI.Controllers
                 Title = newTodo.Title,
                 Description = newTodo.Description,
                 DueDate = newTodo.DueDate,
-                Status = status,   
+                Status = status,
                 User = user
             };
 
@@ -103,7 +103,7 @@ namespace TodoAPI.Controllers
             if (todo == null)
                 return NotFound();
 
-         
+
             var status = dB.TodoStatuses.FirstOrDefault(s => s.StatusOption == updatedTodo.Status);
             var user = dB.Users.FirstOrDefault(u => u.Username == username);
             if (status == null)
@@ -129,7 +129,7 @@ namespace TodoAPI.Controllers
 
         public ActionResult Delete(int id)
         {
-            
+
             var todo = dB.Todos.Find(id);
             if (todo == null)
             {

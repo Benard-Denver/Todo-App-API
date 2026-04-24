@@ -1,14 +1,19 @@
-﻿namespace TodoAPI.DbModels
+﻿using System;
+using System.Collections.Generic;
+
+namespace TodoAPI.DbModels;
+
+public partial class Notification
 {
-    public class Notification
-    {
-        public int NotificationID { get; set; }
-        public int TodoID { get; set; }
-        public DateTime TimeStamp { get; set; }
-        public string Message { get; set; }
+    public int NotificationId { get; set; }
 
-        public bool isRead { get; set; }
+    public int TodoId { get; set; }
 
-        public  Todo Todo { get; set; }
-    }
+    public DateTimeOffset TimeStamp { get; set; }
+
+    public string Message { get; set; } = null!;
+
+    public bool IsRead { get; set; }
+
+    public virtual Todo Todo { get; set; } = null!;
 }

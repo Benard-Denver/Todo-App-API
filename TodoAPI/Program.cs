@@ -55,7 +55,7 @@ builder.Services.AddDbContext<TodoContext>(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtService>();
-builder.Services.AddHostedService<NotificationService>();
+builder.Services.AddHostedService<TodoNotificationBackgroundService>();
 
 var app = builder.Build();
 

@@ -1,61 +1,54 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TodoAPI.DbModels;
-using TodoAPI.Models;
 
 namespace TodoAPI.Services
 {
-    public class NotificationService : BackgroundService
+    public class TodoNotificationBackgroundService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public NotificationService(IServiceScopeFactory scopeFactory)
+        public TodoNotificationBackgroundService(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Console.WriteLine("NotificationService started...");
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<TodoContext>();
+                var context = scope.ServiceProvider.GetRequiredService<TodoContext>();
 
                 var now = DateTime.UtcNow;
 
-                // 🔥 Get todos that need notifications
-                var todos = await db.Todos
-                    .Include(t => t.User)
-                    .Where(t => t.NotificationTime <= now && t.Notify == true)
-                    .ToListAsync();
+                var dueTodos = await context.Todos
+                    .Where(t =>
+                        t.Notify == true &&
+                        t.NotificationTime != null &&
+                        t.NotificationTime <= now)
+                    .ToListAsync(stoppingToken);
 
-                Console.WriteLine($"Found {todos.Count} todos to notify");
-
-                foreach (var todo in todos)
+                foreach (var todo in dueTodos)
                 {
-                    // 🔔 Insert into Notification table
-                    var notification = new Notification
-                    {
-                        TodoID = todo.Id,
-                        Todo = todo,
-                        TimeStamp = DateTime.UtcNow,
-                        Message = $"Reminder: {todo.Title} is due"
-                    };
-
-                    db.Notifications.Add(notification);
-
                     // prevent duplicate notifications
-                    todo.Notify = false;
+                    var alreadyNotified = await context.Notifications
+                        .AnyAsync(n => n.TodoId == todo.Id && n.Message.Contains("Reminder"), stoppingToken);
 
-                    Console.WriteLine($"Notification created for Todo: {todo.Title}");
+                    if (alreadyNotified)
+                        continue;
+
+                    context.Notifications.Add(new Notification
+                    {
+                        TodoId = todo.Id,
+                        Message = $"Reminder: '{todo.Title}' is due",
+                        TimeStamp = DateTimeOffset.UtcNow,
+                        IsRead = false
+                    });
                 }
 
-                await db.SaveChangesAsync();
+                await context.SaveChangesAsync(stoppingToken);
 
-                // check every 30 seconds (good for testing)
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                await Task.Delay(60000, stoppingToken); // every 1 minute
             }
         }
     }

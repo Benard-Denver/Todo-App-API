@@ -1,36 +1,41 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using TodoAPI.DbModels;
 
-namespace TodoAPI.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class NotificationController : ControllerBase
 {
-    [ApiController]
-    [Route("api")]
-    public class NotificationController : ControllerBase
+    private readonly TodoContext _context;
+
+    public NotificationController(TodoContext context)
     {
-        private readonly TodoContext dB;
+        _context = context;
+    }
 
-        public NotificationController(TodoContext context)
-        {
-            dB = context;
-        }
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetUserNotifications(int userId)
+    {
+        var notifications = await _context.Notifications
+            .Include(n => n.Todo)
+            .Where(n => n.Todo.UserId == userId)
+            .OrderByDescending(n => n.TimeStamp)
+            .ToListAsync();
 
-        [HttpGet("notifications")]
-        public async Task<IActionResult> GetNotifications()
-        {
-            var username = User.Identity?.Name;
+        return Ok(notifications);
+    }
 
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized();
+    [HttpPut("read/{id}")]
+    public async Task<IActionResult> MarkAsRead(int id)
+    {
+        var notification = await _context.Notifications.FindAsync(id);
 
-            var notifications = await dB.Notifications
-                .Include(n => n.Todo)
-                .ThenInclude(t => t.User)
-                .Where(n => n.Todo.User.Username == username && !n.isRead)
-                .OrderByDescending(n => n.TimeStamp)
-                .ToListAsync();
+        if (notification == null)
+            return NotFound();
 
-            return Ok(notifications);
-        }
+        notification.IsRead = true;
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 }

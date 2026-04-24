@@ -17,11 +17,11 @@ namespace TodoAPI.Services
             while (!stoppingToken.IsCancellationRequested)
             {
                 using var scope = _scopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<TodoContext>();
+                var db = scope.ServiceProvider.GetRequiredService<TodoContext>();
 
                 var now = DateTime.UtcNow;
 
-                var dueTodos = await context.Todos
+                var dueTodos = await db.Todos
                     .Where(t =>
                         t.Notify == true &&
                         t.NotificationTime != null &&
@@ -31,13 +31,13 @@ namespace TodoAPI.Services
                 foreach (var todo in dueTodos)
                 {
                     // prevent duplicate notifications
-                    var alreadyNotified = await context.Notifications
+                    var alreadyNotified = await db.Notifications
                         .AnyAsync(n => n.TodoId == todo.Id && n.Message.Contains("Reminder"), stoppingToken);
 
                     if (alreadyNotified)
                         continue;
 
-                    context.Notifications.Add(new Notification
+                    db.Notifications.Add(new Notification
                     {
                         TodoId = todo.Id,
                         Message = $"Reminder: '{todo.Title}' is due",
@@ -46,7 +46,7 @@ namespace TodoAPI.Services
                     });
                 }
 
-                await context.SaveChangesAsync(stoppingToken);
+                await db.SaveChangesAsync(stoppingToken);
 
                 await Task.Delay(60000, stoppingToken); // every 1 minute
             }

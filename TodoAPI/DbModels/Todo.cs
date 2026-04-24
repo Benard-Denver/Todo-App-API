@@ -16,6 +16,8 @@ public partial class Todo
     public DateTime DueDate { get; set; }
 
     public int UserId { get; set; }
+    public DateTime NotificationTime { get; set; }
+    public bool Notify {  get; set; }
 
     public virtual TodoStatus Status { get; set; } = null!;
 

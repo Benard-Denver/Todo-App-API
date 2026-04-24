@@ -52,6 +52,7 @@ builder.Services.AddAuthentication(options =>
     });
 builder.Services.AddDbContext<TodoContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddHostedService<NotificationService>();
